@@ -11,29 +11,68 @@ MAC: <span id="mac"></span><br>
 Timezone: <span id="tz"></span><br>
 Last sync: <span id="lastsync"></span><br>
 Now: <span id="now"></span><br>
+
 <button type="button" id="stop">Stop</button>
 <button type="button" id="start">Start</button>
 <script>
-$.ajax({
-  url: "/status",
-  success: function( result ) {
-    $( "#mac" ).text(result.mac);
-    $( "#tz" ).text(result.config.tz);
-    $("#lastsync").text(new Date(1000*result.ntp.secs + result.ntp.usecs / 1000).toISOString());
-    $("#now").text(new Date(1000*(result.time[0]) + result.time[1] / 1000).toISOString());
-  }
-});
+var sample = 
+{
+    "mac": "5c:cf:7f:23:82:50",
+    "config": {
+        "tz": "eastern"
+    },
+    "time": [
+        1483224410,
+        318719,
+        -12044
+    ],
+    "running": 1,
+    "hms": 20810,
+    "freemem": 15584,
+    "ntp": {
+        "usecs": 720661,
+        "secs": 1483223883,
+        "info": {
+            "pending_leap": 1,
+            "stratum": 1,
+            "offset_us": -136,
+            "root_maxerr_us": 457,
+            "root_dispersion_us": 0,
+            "root_delay_us": 0,
+            "delay_us": 915,
+            "leap": 1
+        },
+        "server": "192.168.1.21"
+    }
+};
+function refresh() {
+    $.ajax({
+      url: "/status",
+      success: function( result ) {
+        $( "#mac" ).text(result.mac);
+        $( "#tz" ).text(result.config.tz);
+        $("#lastsync").text(new Date(1000*result.ntp.secs + result.ntp.usecs / 1000).toISOString());
+        $("#now").text(new Date(1000*(result.time[0]) + result.time[1] / 1000).toISOString());
+        $("#stop").prop('disabled', !result.running);        
+        $("#start").prop('disabled', result.running);
+      }
+    });
+}
+
+refresh();
 
 $("#stop").on('click', function() {
   $.ajax({
     url: "/set?stop=1",
-    method: "POST"
+    method: "POST",
+    success: refresh
   });
 });
 $("#start").on('click', function() {
   $.ajax({
     url: "/set?start=1",
-    method: "POST"
+    method: "POST",
+    success: refresh
   });
 });
 </script>
