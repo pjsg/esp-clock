@@ -2,6 +2,39 @@ HTTP/1.1 200 OK
 Content-type: text/html
 Connection:close
 
-<html><body>
-<h1>It Works!</h1>
+<html><head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+</head><body>
+<h1>Clock</h1>
+MAC: <span id="mac"></span><br>
+
+Timezone: <span id="tz"></span><br>
+Last sync: <span id="lastsync"></span><br>
+Now: <span id="now"></span><br>
+<button type="button" id="stop">Stop</button>
+<button type="button" id="start">Start</button>
+<script>
+$.ajax({
+  url: "/status",
+  success: function( result ) {
+    $( "#mac" ).text(result.mac);
+    $( "#tz" ).text(result.config.tz);
+    $("#lastsync").text(new Date(1000*result.ntp.secs + result.ntp.usecs / 1000).toISOString());
+    $("#now").text(new Date(1000*(result.time[0]) + result.time[1] / 1000).toISOString());
+  }
+});
+
+$("#stop").on('click', function() {
+  $.ajax({
+    url: "/set?stop=1",
+    method: "POST"
+  });
+});
+$("#start").on('click', function() {
+  $.ajax({
+    url: "/set?start=1",
+    method: "POST"
+  });
+});
+</script>
 </body></html>
