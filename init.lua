@@ -3,20 +3,6 @@ function printrtc()
   print ('rate', rate)
 end
 
-function logit(server, data)
-  if data['offset_us'] then
-      local _, _, rate = rtctime.get()
-      url = string.format("http://data.sparkfun.com/input/6JzRpa26jAuwJp0pnA4X?private_key=WwknrR9XeytMxd0dmzNA&mac=%s&delay_us=%d&offset_us=%s&rate=%d&root_delay_us=%d&server=%s",
-        wifi.sta.getmac(), data['delay_us'], data['offset_us'], 
-        rate, data['root_delay_us'], server)
-      http.get(url, nil, function(code, data)
-        if (code < 0) then
-          print("HTTP request failed", code, data)
-        end
-      end)
-  end
-end
-
 --syslog = require("syslog")("192.168.1.68");
 lastNtpResult = {}
 
@@ -25,7 +11,7 @@ function startsync()
     }, function (a,b, c, d ) 
       lastNtpResult = { secs=a, usecs=b, server=c, info=d }
       print(a,b, c, d['offset_us']) printrtc() 
-      logit(c, d)
+      --logit(c, d)
       --syslog:send("SNTP: Server " .. c .. " offset " .. (d['offset_us'] or 'nil') .. " delay " .. (d['delay_us'] or 'nil') .. " rate " .. rtcmem.read32(14))
     end, function(e) print (e) end, 1)
 end
@@ -37,16 +23,53 @@ end
 
 ptime()
 
-tmr.alarm(0, 3000, 1, function()
-   local ip = wifi.sta.getip()
-   if ip == nil then
-     return
-   end
-   tmr.unregister(0)
-   startsync()
-   mdns.register("clock")
-   dofile("webserver.lua").register(dofile("httpserver.lua"))
-end)
+syslog = (require "syslog")("192.168.1.68")
 
-dofile("pps.lua")
-dofile("tick.lua")
+local power = require "powerstatus"
+
+tmr.alarm(1, 1000, 1, function()
+  if power.powerok(646) then
+    tmr.unregister(1)
+
+    tmr.alarm(0, 3000, 1, function()
+       local ip = wifi.sta.getip()
+       if ip == nil then
+         return
+       end
+       tmr.unregister(0)
+       syslog:send("Booted: " .. sjson.encode({node.bootreason()}))
+       startsync()
+       mdns.register(string.format("clock-%06x", node.chipid()))
+       --dofile("webserver.lua").register(dofile("httpserver.lua"))
+       tmr.alarm(0, 10000, 0, function() 
+         (require"control").init(2)
+       end)
+       --dofile("telnet.lua")
+    end)
+   end
+   end)
+
+--dofile("pps.lua")
+--dofile("tick.lua")
+
+function debounce(cb)
+  local timeout = tmr.create()
+  local enabled = true
+  timeout:register(100, tmr.ALARM_SEMI, function() enabled = true end)
+  return function()
+    if enabled then
+      enabled = false
+      cb()
+      timeout:start()
+    end
+  end
+end
+
+gpio.mode(3, gpio.INT)
+gpio.trig(3, "down", debounce(function() (require "control").stop() end))
+
+function quit() 
+  tmr.unregister(1)
+  tmr.unregister(0)
+  print ("Done")
+end

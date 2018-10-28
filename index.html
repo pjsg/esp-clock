@@ -11,7 +11,7 @@ MAC: <span id="mac"></span><br>
 Timezone: <span id="tz"></span><br>
 Last sync: <span id="lastsync"></span><br>
 Now: <span id="now"></span><br>
-
+    
 <button type="button" id="stop">Stop</button>
 <button type="button" id="start">Start</button>
 <script>
@@ -45,10 +45,8 @@ var sample =
         "server": "192.168.1.21"
     }
 };
-function refresh() {
-    $.ajax({
-      url: "/status",
-      success: function( result ) {
+
+function handleResponse( result ) {
         $( "#mac" ).text(result.mac);
         $( "#tz" ).text(result.config.tz);
         $("#lastsync").text(new Date(1000*result.ntp.secs + result.ntp.usecs / 1000).toISOString());
@@ -56,6 +54,10 @@ function refresh() {
         $("#stop").prop('disabled', !result.running);        
         $("#start").prop('disabled', result.running);
       }
+function refresh() {
+    $.ajax({
+      url: "/status",
+      success: handleResponse
     });
 }
 
@@ -65,14 +67,14 @@ $("#stop").on('click', function() {
   $.ajax({
     url: "/set?stop=1",
     method: "POST",
-    success: refresh
+    success: handleResponse
   });
 });
 $("#start").on('click', function() {
   $.ajax({
     url: "/set?start=1",
     method: "POST",
-    success: refresh
+    success: handleResponse
   });
 });
 </script>

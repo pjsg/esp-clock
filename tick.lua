@@ -16,6 +16,8 @@ local power = require "powerstatus"
 
 local timer = tmr.create()
 
+local pulser = require "pulser"
+
 function tick()
   if power.powerok() then
       local want, clock, inus, evenodd = time.get()
