@@ -73,7 +73,7 @@ function M.sethms(hour, min, sec)
 end
 
 function M.gethms()
-  local t = clockPos / pulsePerSecond
+  local t = clockpos / pulsePerSecond
   return t / 3600, (t / 60) % 60, t % 60
 end
 
@@ -100,7 +100,7 @@ function M.get()
   local offset = sntp.getoffset()
   us = us - offset
   local want = (us + 1 + tz.getoffset(us + 1)) % 43200
-  print (string.format("%d.%06d offset=%d want=%d, now=%d", us + offset, nus, offset, want, now))
+  dprint (string.format("%d.%06d offset=%d want=%d, now=%d", us + offset, nus, offset, want, now))
   return want * pulsePerSecond, clockpos, 1000000 - nus, now
 
 end

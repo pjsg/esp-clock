@@ -3,38 +3,39 @@
 local M = {}
 
 local t = require "time"
-local config = require "config"
+local config = require "config"("config")
 local tz = require "tz"
+local pulser = require "pulser"
 
 local function wrapit(fn)
   return function (conn)
     local buf = "HTTP/1.1 200 OK\r\n" ..
                 "Content-type: application/json\r\n" ..
                 "Connection: close\r\n\r\n" ..
-                cjson.encode(fn())
+                sjson.encode(fn())
     conn:send(buf, function(c) c:close() end)
   end
 end
 
-local function getstatus()
+local function getStatus()
   local R = {}
   R.time = {rtctime.get()}
   R.hms = t.getpos()
   R.running = t.getrunning()
   R.config = config.table
+  R.boardConfig = require "config"('board').table
   R.ntp = lastNtpResult
   R.freemem = node.heap()
   R.mac = wifi.sta.getmac()
+  R.isBipolar = pulser.getIsBipolar()
   return R 
 end
-
-local wrappedGetstatus = wrapit(getstatus)
 
 function M.register(adder)
   function addjson(path, fn)
     adder("GET", path, wrapit(fn)) 
   end
-  adder("GET", "/status", wrappedGetstatus)
+  addjson("/status", getStatus)
   addjson("/zones", function ()
     return tz.getzones()
   end)
@@ -54,7 +55,7 @@ function M.register(adder)
         config.tz = vars.zone
       end
     end
-    wrappedGetstatus(conn)
+    wrapit(getStatus)(conn)
   end)
 end
 

@@ -9,6 +9,8 @@ local timer = tmr.create()
 
 local pulser = require "pulser"
 
+local board = require "config"('board')
+
 local pulsePerSecond
 local pulsePerRev
 local maxSpeed
@@ -29,7 +31,7 @@ local function tick()
           local atus = inus + nowus  -- now is the next second boundary
           -- we want to figure out the tick number corresponding
           -- to 'want' (which is mod 43200)
-          print ('want', want, clock, inus, atus, offset, ticks)
+          dprint ('want', want, clock, inus, atus, offset, ticks)
           local offsetS = offset / pulsePerSecond
           if offsetS < 20 then
             pulser.tickAt(ticks + offset, atus)
@@ -47,18 +49,17 @@ local function tick()
   timer:alarm(500, 0, tick)
 end
 
-M.init = function (pps)
+M.init = function ()
+  local pps = board.pps_(1)
   pulsePerSecond = pps
   pulsePerRev = 43200 * pulsePerSecond
-  local pulseWidth = 100000
+  local pulseWidth = board.pulsewidth_(100000)
   maxSpeed = 1000000/(pulsePerSecond * pulseWidth * 2)
   if maxSpeed > 6 then
     maxSpeed = 6
   end
   time.init(pps)
-  print ('about to init', pulser)
-  pulser.init(true, pps, pulseWidth, maxSpeed * pps)
-  print ('inited')
+  pulser.init(board.bipolar_(false), pps, pulseWidth, maxSpeed * pps)
   pulser.start(0, true)
   timer:stop()
   tick()

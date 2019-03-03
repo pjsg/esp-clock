@@ -47,7 +47,7 @@ function tick()
               P[2] = pulsetime
               P[3] = 10000
               gpio.serout(pin[evenodd > 0 and 1 or 2], inactive, P, 1, 
-              function () time.tick() tick() end) 
+              function () tick() end) 
               --print ('P', P[1], P[2], P[3], 'steps', steps, 'gap', gap)
               return
             end
@@ -55,7 +55,7 @@ function tick()
             -- want one tick every 10 seconds to show clock is alive
             local P = { 1000000, pulsetime, 10000}
             gpio.serout(pin[evenodd > 0 and 1 or 2], inactive, P, 1, 
-            function () time.tick() tick() end) 
+            function () tick() end) 
             return
           end
       end

@@ -78,7 +78,7 @@ end
 M.tickAt = function(tick, us)
   local pos, steps, offset, now = pulser:getstate()
 
-  print ('tick', tick, us, 'pulser', pos, steps, offset, now)
+  dprint ('tick', tick, us, 'pulser', pos, steps, offset, now)
 
   -- If our next tick is 3 in 1000 us, and we want
   -- tick = 2 in 3000 us
@@ -118,7 +118,7 @@ M.tickAt = function(tick, us)
   else
     new_adjust = adjust
   end
-  print ('adjust', new_adjust, 'was', adjust, 'tickOff', tickOff)
+  dprint ('adjust', new_adjust, 'was', adjust, 'tickOff', tickOff)
   pulser:adjust(new_adjust)
 end
 
@@ -163,6 +163,10 @@ end
 
 M.getPulser = function()
   return pulser
+end
+
+M.getIsBipolar = function()
+  return isBipolar
 end
 
 return M
