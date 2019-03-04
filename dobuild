@@ -1,0 +1,8 @@
+#!/bin/sh
+
+rm -f LFS_*img
+
+docker run --dns=8.8.8.8 --rm -ti -v ~/nodemcu-firmware:/opt/nodemcu-firmware -v `pwd`:/opt/lua marcelstoer/nodemcu-build lfs-image
+
+cp LFS_*img ~/nodemcu-firmware/lfs.img
+

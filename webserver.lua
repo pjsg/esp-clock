@@ -13,7 +13,8 @@ local function wrapit(fn)
                 "Content-type: application/json\r\n" ..
                 "Connection: close\r\n\r\n" ..
                 sjson.encode(fn())
-    conn:send(buf, function(c) c:close() end)
+    local now = tmr.now()
+    conn:send(buf, function(c) print ('closing socket after', tmr.now() - now) c:close() end)
   end
 end
 
