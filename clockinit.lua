@@ -38,7 +38,7 @@ local t0 = tmr.create()
 
 t1:alarm(1000, tmr.ALARM_AUTO, function(t)
   if power.powerok() then
-    syslog:send("power ok")
+    print("power ok")
     t:unregister()
 
     t0:alarm(3000, tmr.ALARM_AUTO, function(t)
@@ -53,9 +53,17 @@ t1:alarm(1000, tmr.ALARM_AUTO, function(t)
        startsync()
        mdns.register(string.format("clock-%06x", node.chipid()))
        dofile("webserver.lua").register(dofile("httpserver.lua"))
+       local control = require "control"
        tmr.create():alarm(10000, tmr.ALARM_SINGLE, function() 
-         (require"control").init()
+         control.start()
        end)
+       dofile("tftpd.lua")(function (fn)
+         if fn == "lfs.img" then
+           control.stop()
+           tmr.create():alarm(5000, tmr.ALARM_SINGLE, function() 
+             node.flashreload(fn) end) 
+         end
+       end) 
        --dofile("telnet.lua")
     end)
    end
@@ -64,7 +72,7 @@ t1:alarm(1000, tmr.ALARM_AUTO, function(t)
 function debounce(cb)
   local timeout = tmr.create()
   local enabled = true
-  timeout:register(100, tmr.ALARM_SEMI, function() enabled = true end)
+  timeout:register(200, tmr.ALARM_SEMI, function() enabled = true end)
   return function()
     if enabled then
       enabled = false
@@ -78,7 +86,7 @@ i2c.setup(0, 6, 5, 400000)
 disp = u8g2.ssd1306_i2c_128x64_noname(0, 0x3c)
 
 gpio.mode(3, gpio.INT)
-gpio.trig(3, "down", debounce(function() (require "control").stop() end))
+gpio.trig(3, "down", debounce(function() (require "control").toggle() end))
 
 function quit() 
   t1:unregister()

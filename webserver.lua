@@ -3,6 +3,7 @@
 local M = {}
 
 local t = require "time"
+local control = require "control"
 local config = require "config"("config")
 local tz = require "tz"
 local pulser = require "pulser"
@@ -43,10 +44,10 @@ function M.register(adder)
   
   adder("POST", "/set", function (conn, vars)
     if vars.start then
-      t.start()
+      control.start()
     end
     if vars.stop then
-      t.stop()
+      control.stop()
     end
     if vars.pos then
       t.setpos(vars.pos)

@@ -7,7 +7,7 @@ local startpos = 0
 local savedpos = 0
 local pulse = 0  -- either 0x10000 or 0
 local PULSEVAL = 0x1000000
-local running = 1
+local running = true
 local filename = "clockpos.state"
 local statefile 
 local pulsePerSecond = 1
@@ -35,6 +35,8 @@ function M.init(pps)
   end
 
   sntp.setoffset(0)
+  running = true
+
 end
 
 function M.ticks(count, even) 
@@ -52,11 +54,11 @@ function M.ticks(count, even)
 end
 
 function M.stop()
-  running = 0
+  running = false
 end
 
 function M.start()
-  running = 1
+  running = true
 end
 
 function M.setpos(pos)
@@ -88,7 +90,7 @@ end
 function M.get()
   -- returns the clock pas that we want in x us.
   -- Also returns the current clock pos.
-  if running == 0 then
+  if not running then
     return -1, -1, -1, -1
   end
   local rtctime_get = rtctime.get

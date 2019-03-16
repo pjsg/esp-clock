@@ -48,6 +48,10 @@ local function drawState(disp)
   disp:drawStr(0, 40, "C: " .. clockpos)
 end
 
+tmr.create():alarm(500, tmr.ALARM_AUTO, function()
+  display.paint(drawState)
+end)
+
 -- tick runs every 500ms (or so) to keep the clock in phase
 
 local function tick()
@@ -78,10 +82,11 @@ local function tick()
       M.stop()
   end
   timer:alarm(500, 0, tick)
-  display.paint(drawState)
 end
 
-M.init = function ()
+local running = false
+
+M.start = function ()
   local pps = board.pps_(1)
   pulsePerSecond = pps
   pulsePerRev = 43200 * pulsePerSecond
@@ -95,6 +100,7 @@ M.init = function ()
   pulser.start(0, true)
   timer:stop()
   tick()
+  running = true
 end
 
 M.stop = function ()
@@ -105,7 +111,16 @@ M.stop = function ()
     time.ticks(ticks, even)
     time.save()
     time.stop()
+    running = false
     print ('stopped') end)
+end
+
+M.toggle = function()
+  if running then
+    M.stop()
+  else
+    M.start()
+  end
 end
 
 
