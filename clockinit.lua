@@ -31,16 +31,14 @@ else
   dprint = print
 end
 
-print ('syslog =', syslog)
-
 local power = require "powerstatus"
 
 local t1 = tmr.create()
 local t0 = tmr.create()
 
 t1:alarm(1000, tmr.ALARM_AUTO, function(t)
-  if power.powerok(646) then
-    print ("power ok")
+  if power.powerok() then
+    syslog:send("power ok")
     t:unregister()
 
     t0:alarm(3000, tmr.ALARM_AUTO, function(t)
@@ -76,8 +74,11 @@ function debounce(cb)
   end
 end
 
+i2c.setup(0, 6, 5, 400000)
+disp = u8g2.ssd1306_i2c_128x64_noname(0, 0x3c)
+
 gpio.mode(3, gpio.INT)
---gpio.trig(3, "down", debounce(function() (require "control").stop() end))
+gpio.trig(3, "down", debounce(function() (require "control").stop() end))
 
 function quit() 
   t1:unregister()

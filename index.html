@@ -61,7 +61,9 @@ function refresh() {
     });
 }
 
-refresh();
+$(document).ready(function()
+  refresh();
+});
 
 $("#stop").on('click', function() {
   $.ajax({

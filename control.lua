@@ -4,6 +4,9 @@ local M = {}
 
 local time = require "time"
 local power = require "powerstatus"
+local tz = require "tz"
+
+local display = require "display"(disp)
 
 local timer = tmr.create()
 
@@ -15,12 +18,40 @@ local pulsePerSecond
 local pulsePerRev
 local maxSpeed
 
-local limit = 3600 * 1024 * 100 / (100 + 470) / 1000
+local function gethms(sec)
+  local s = sec % 60
+  local mins = sec / 60
+  local m = mins % 60
+  local hours = mins / 60
+  local h = hours % 24
+  local days = hours / 24
+
+  return s, m, h, days
+end
+
+local function drawState(disp)
+  local sec, usec = rtctime.get()
+
+  sec = sec + tz.getoffset(sec)
+
+  local s, m, h = gethms(sec)
+
+  local info = string.format("%02d:%02d:%02d", h, m ,s)
+
+  h, m, s = time.gethms()
+  local clockpos = string.format("%02d:%02d:%02d", h, m ,s)
+
+  --disp:setFont(u8g2.
+  disp:drawStr(0, 0, info)
+
+  disp:setFont(u8g2.font_helvB18_tf)
+  disp:drawStr(0, 40, "C: " .. clockpos)
+end
 
 -- tick runs every 500ms (or so) to keep the clock in phase
 
 local function tick()
-  if power.powerok(limit) then
+  if power.powerok() then
       local ticks, even = pulser.status()
       time.ticks(ticks, even)
       local want, clock, inus, nowus = time.get()
@@ -44,9 +75,10 @@ local function tick()
           end
       end
   else
-      time.save()
+      M.stop()
   end
   timer:alarm(500, 0, tick)
+  display.paint(drawState)
 end
 
 M.init = function ()
