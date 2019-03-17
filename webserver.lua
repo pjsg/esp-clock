@@ -6,7 +6,9 @@ local t = require "time"
 local control = require "control"
 local config = require "config"("config")
 local tz = require "tz"
+local led = require "led"
 local pulser = require "pulser"
+local powerstatus = require "powerstatus"
 
 local function wrapit(fn)
   return function (conn)
@@ -30,6 +32,8 @@ local function getStatus()
   R.freemem = node.heap()
   R.mac = wifi.sta.getmac()
   R.isBipolar = pulser.getIsBipolar()
+  R.millivolts = powerstatus.millivolts()
+  R.leds = led.getHexColors()
   return R 
 end
 

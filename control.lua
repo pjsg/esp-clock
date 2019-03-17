@@ -5,6 +5,7 @@ local M = {}
 local time = require "time"
 local power = require "powerstatus"
 local tz = require "tz"
+local led = require "led"
 
 local display = require "display"(disp)
 
@@ -48,7 +49,7 @@ local function drawState(disp)
   disp:drawStr(0, 40, "C: " .. clockpos)
 end
 
-tmr.create():alarm(500, tmr.ALARM_AUTO, function()
+tmr.create():alarm(250, tmr.ALARM_AUTO, function()
   display.paint(drawState)
 end)
 
@@ -68,15 +69,19 @@ local function tick()
           -- to 'want' (which is mod 43200)
           dprint ('want', want, clock, inus, atus, offset, ticks)
           local offsetS = offset / pulsePerSecond
+          local ledcolor = led.green
           if offsetS < 20 then
             pulser.tickAt(ticks + offset, atus)
           elseif offsetS > 43180 then
             pulser.tickAt(ticks + offset - (43200 * pulsePerSecond), atus)
           elseif offsetS > 43200 - 43200 / maxSpeed then
             pulser.tickAt(ticks + 1, nowus + 20000000)
+            ledcolor = led.blue
           else
             pulser.tickAt(ticks + 10 * pulsePerSecond, atus)
+            ledcolor = led.blue
           end
+          led.setD5(ledcolor)
       end
   else
       M.stop()
@@ -101,6 +106,7 @@ M.start = function ()
   timer:stop()
   tick()
   running = true
+  led.setD5(led.yellow)
 end
 
 M.stop = function ()
@@ -112,6 +118,7 @@ M.stop = function ()
     time.save()
     time.stop()
     running = false
+    led.setD5(led.red)
     print ('stopped') end)
 end
 

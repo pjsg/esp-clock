@@ -20,11 +20,15 @@ function m.powerok()
     print ('Power OK', current, bit.rshift(adcval, 5))
     last = true
   end
-  return true -- last
+  return last
 end
 
 function m.get()
   return bit.rshift(adcval, 5)
+end
+
+function m.millivolts() 
+  return m.get() * 5700 / 1024
 end
 
 return m

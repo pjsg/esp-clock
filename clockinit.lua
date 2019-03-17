@@ -23,6 +23,9 @@ end
 
 ptime()
 
+ws2812.init()
+ws2812.write(string.char(0,0,0,0,0,0,0,0,0))
+
 syslog = (require "syslog")("192.168.1.68")
 
 if true then
@@ -32,6 +35,9 @@ else
 end
 
 local power = require "powerstatus"
+local led = require "led"
+
+led.setD5(led.red)
 
 local t1 = tmr.create()
 local t0 = tmr.create()
@@ -55,6 +61,7 @@ t1:alarm(1000, tmr.ALARM_AUTO, function(t)
        dofile("webserver.lua").register(dofile("httpserver.lua"))
        local control = require "control"
        tmr.create():alarm(10000, tmr.ALARM_SINGLE, function() 
+         led.setD5(led.yellow)
          control.start()
        end)
        dofile("tftpd.lua")(function (fn)
