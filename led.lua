@@ -7,45 +7,46 @@ M.green = string.char(0,255,0)
 M.blue = string.char(0,0,255)
 M.white = string.char(255,255,255)
 
-local d5 = M.black
-local d4 = M.black
-local d3 = M.black
+local buffer = ws2812.newBuffer(3, 3)
+local fadedBuffer = ws2812.newBuffer(3, 3)
+local brightness = 256
 
 function M.flush()
-  ws2812.write(d5 .. d4 .. d3) 
+  fadedBuffer:mix(brightness, buffer)
+  ws2812.write(fadedBuffer) 
 end
 
 function M.setD5(color) 
-  d5 = color
+  buffer:set(1, color)
   M.flush()
 end
 
 function M.setD4(color) 
-  d4 = color
+  buffer:set(2, color)
   M.flush()
 end
 
 function M.setD3(color) 
-  d3 = color
+  buffer:set(3, color)
   M.flush()
 end
 
 function M.off()
-  d3 = M.black
-  d4 = M.black
-  d5 = M.black
+  buffer:fill(M.black)
   M.flush()
 end
 
-function tohex(str)
-    return (str:gsub('.', function (c)
-            return string.format('%02X', string.byte(c))
-            end))
+function M.setBrightness(bright)
+  brightness = bright
+  M.flush()
+end
+
+function tohex(led)
+    return string.format('%02X%02X%02X', buffer:get(led))
 end
 
 function M.getHexColors()
-  return { tohex(d3), tohex(d4), tohex(d5) }
+  return { tohex(3), tohex(2), tohex(1) }
 end
-
 
 return M

@@ -69,17 +69,18 @@ local function tick()
           -- to 'want' (which is mod 43200)
           dprint ('want', want, clock, inus, atus, offset, ticks)
           local offsetS = offset / pulsePerSecond
-          local ledcolor = led.green
+          local ledcolor = led.blue
+          if offsetS < 2 or offsetS > 43197 then
+            ledcolor = led.green
+          end
           if offsetS < 20 then
             pulser.tickAt(ticks + offset, atus)
           elseif offsetS > 43180 then
             pulser.tickAt(ticks + offset - (43200 * pulsePerSecond), atus)
           elseif offsetS > 43200 - 43200 / maxSpeed then
             pulser.tickAt(ticks + 1, nowus + 20000000)
-            ledcolor = led.blue
           else
             pulser.tickAt(ticks + 10 * pulsePerSecond, atus)
-            ledcolor = led.blue
           end
           led.setD5(ledcolor)
       end
@@ -88,6 +89,34 @@ local function tick()
   end
   timer:alarm(500, 0, tick)
 end
+
+local maxBrightness = 256
+local minBrightness = 16
+
+tmr.create():alarm(60, tmr.ALARM_AUTO, function() 
+  local sec, usec = rtctime.get()
+
+  sec = sec + tz.getoffset(sec)
+
+  local s, m, h = gethms(sec)
+
+  -- darkest after 8 pm and before 4AM
+  -- brightest after 8AM and before 4PM
+
+  if h < 4 or h >= 20 then
+    led.setBrightness(minBrightness)
+  elseif h >= 8 and h < 16 then
+    led.setBrightness(maxBrightness)
+  else
+    m = h * 60 + m
+    if m > 12 * 60 then
+      m = 24 * 60 - m
+    end
+
+    m = m - 4 * 60
+    led.setBrightness(m * (maxBrightness - minBrightness) / (4 * 60))
+  end
+end)
 
 local running = false
 
