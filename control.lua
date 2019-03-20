@@ -1,4 +1,4 @@
--- tickcontrol
+-- control
 
 local M = {}
 
@@ -42,7 +42,6 @@ local function drawState(disp)
   h, m, s = time.gethms()
   local clockpos = string.format("%02d:%02d:%02d", h, m ,s)
 
-  --disp:setFont(u8g2.
   disp:drawStr(0, 0, info)
 
   disp:setFont(u8g2.font_helvB18_tf)

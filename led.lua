@@ -49,4 +49,9 @@ function M.getHexColors()
   return { tohex(3), tohex(2), tohex(1) }
 end
 
+function M.init()
+  ws2812.init()
+  M.flush()
+end
+
 return M

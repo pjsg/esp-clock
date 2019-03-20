@@ -1,9 +1,10 @@
+local config = require "config"("config")
+
 function printrtc()
   local _, _, rate = rtctime.get()
   print ('rate', rate)
 end
 
---syslog = require("syslog")("192.168.1.68");
 lastNtpResult = {}
 
 function startsync()
@@ -11,8 +12,6 @@ function startsync()
     }, function (a,b, c, d ) 
       lastNtpResult = { secs=a, usecs=b, server=c, info=d }
       print(a,b, c, d['offset_us']) printrtc() 
-      --logit(c, d)
-      --syslog:send("SNTP: Server " .. c .. " offset " .. (d['offset_us'] or 'nil') .. " delay " .. (d['delay_us'] or 'nil') .. " rate " .. rtcmem.read32(14))
     end, function(e) print (e) end, 1)
 end
 
@@ -21,12 +20,7 @@ function ptime()
   print ('time', sec, usec, rate)
 end
 
-ptime()
-
-ws2812.init()
-ws2812.write(string.char(0,0,0,0,0,0,0,0,0))
-
-syslog = (require "syslog")("192.168.1.68")
+syslog = (require "syslog")(config.syslog_("192.168.1.68"))
 
 if true then
   dprint = function() end
@@ -37,8 +31,6 @@ end
 local power = require "powerstatus"
 local led = require "led"
 
-led.setD5(led.red)
-
 local t1 = tmr.create()
 local t0 = tmr.create()
 
@@ -47,7 +39,7 @@ t1:alarm(1000, tmr.ALARM_AUTO, function(t)
     print("power ok")
     t:unregister()
 
-    t0:alarm(3000, tmr.ALARM_AUTO, function(t)
+    t0:alarm(1000, tmr.ALARM_AUTO, function(t)
        local ip = wifi.sta.getip()
        if ip == nil then
          print ("no ip")
@@ -61,7 +53,7 @@ t1:alarm(1000, tmr.ALARM_AUTO, function(t)
        dofile("webserver.lua").register(dofile("httpserver.lua"))
        local control = require "control"
        tmr.create():alarm(10000, tmr.ALARM_SINGLE, function() 
-         led.setD5(led.yellow)
+         led.setD5(led.green)
          control.start()
        end)
        dofile("tftpd.lua")(function (fn)
@@ -71,7 +63,6 @@ t1:alarm(1000, tmr.ALARM_AUTO, function(t)
              node.flashreload(fn) end) 
          end
        end) 
-       --dofile("telnet.lua")
     end)
    end
  end)
@@ -88,9 +79,6 @@ function debounce(cb)
     end
   end
 end
-
-i2c.setup(0, 6, 5, 400000)
-disp = u8g2.ssd1306_i2c_128x64_noname(0, 0x3c)
 
 gpio.mode(3, gpio.INT)
 gpio.trig(3, "down", debounce(function() (require "control").toggle() end))
