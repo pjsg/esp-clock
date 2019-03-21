@@ -5,6 +5,7 @@ local function printrtc()
   print ('rate', rate)
 end
 
+mdns.register("clock", { service="http", port=80 })
 lastNtpResult = {}
 
 local function startsync()
