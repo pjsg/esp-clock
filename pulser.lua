@@ -7,10 +7,10 @@ local active = gpio.LOW + gpio.HIGH - inactive
 
 local pin = { 1, 2 }
 
-gpio.mode(pin[1], gpio.OUTPUT)
-gpio.mode(pin[2], gpio.OUTPUT)
 gpio.write(pin[1], inactive)
 gpio.write(pin[2], inactive)
+gpio.mode(pin[1], gpio.OUTPUT)
+gpio.mode(pin[2], gpio.OUTPUT)
 
 local M = {}
 
