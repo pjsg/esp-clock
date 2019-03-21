@@ -1,23 +1,18 @@
 local config = require "config"("config")
 
-function printrtc()
+local function printrtc()
   local _, _, rate = rtctime.get()
   print ('rate', rate)
 end
 
 lastNtpResult = {}
 
-function startsync()
+local function startsync()
     sntp.sync({"192.168.1.21", "0.nodemcu.pool.ntp.org", "1.nodemcu.pool.ntp.org", "2.nodemcu.pool.ntp.org"
     }, function (a,b, c, d ) 
       lastNtpResult = { secs=a, usecs=b, server=c, info=d }
       print(a,b, c, d['offset_us']) printrtc() 
     end, function(e) print (e) end, 1)
-end
-
-function ptime()
-  local sec, usec, rate = rtctime.get()
-  print ('time', sec, usec, rate)
 end
 
 syslog = (require "syslog")(config.syslog_("192.168.1.68"))
@@ -59,15 +54,18 @@ t1:alarm(1000, tmr.ALARM_AUTO, function(t)
        dofile("tftpd.lua")(function (fn)
          if fn == "lfs.img" then
            control.stop()
-           tmr.create():alarm(5000, tmr.ALARM_SINGLE, function() 
-             node.flashreload(fn) end) 
+           tmr.create():alarm(1000, tmr.ALARM_SINGLE, function() 
+             file.remove("forcelfs.img")
+             file.rename("lfs.img", "forcelfs.img")
+             node.restart()
+           end) 
          end
        end) 
     end)
    end
  end)
 
-function debounce(cb)
+local function debounce(cb)
   local timeout = tmr.create()
   local enabled = true
   timeout:register(200, tmr.ALARM_SEMI, function() enabled = true end)

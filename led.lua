@@ -4,7 +4,9 @@ M.black = string.char(0,0,0)
 M.red = string.char(255,0,0)
 M.yellow = string.char(255,255,0)
 M.green = string.char(0,255,0)
+M.aqua = string.char(0,255,255)
 M.blue = string.char(0,0,255)
+M.fuschia = string.char(255,0,255)
 M.white = string.char(255,255,255)
 
 local buffer = ws2812.newBuffer(3, 3)
@@ -41,7 +43,7 @@ function M.setBrightness(bright)
   M.flush()
 end
 
-function tohex(led)
+local function tohex(led)
     return string.format('%02X%02X%02X', buffer:get(led))
 end
 

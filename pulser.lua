@@ -110,6 +110,8 @@ M.tickAt = function(tick, us)
     adjust = tickOff * (pulseOnTime + pulseOffTime) 
            + signify(us - rtctime.adjust_delta(nextTickUs))
   end
+
+  local new_adjust
   
   if adjust > -10000 and adjust < 10000 then
     offsetAccumulator = offsetAccumulator + adjust

@@ -38,7 +38,7 @@ local function getStatus()
 end
 
 function M.register(adder)
-  function addjson(path, fn)
+  local function addjson(path, fn)
     adder("GET", path, wrapit(fn)) 
   end
   addjson("/status", getStatus)
