@@ -151,6 +151,9 @@ end
 
 -- calls the callback when stopped with the number of ticks since start
 M.stop = function(callback)
+  if not pulser then
+    return
+  end
   local pos, steps, offset, new = pulser:getstate()
 
   -- 3 & 5 are the delaystates 

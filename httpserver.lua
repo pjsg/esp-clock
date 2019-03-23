@@ -2,30 +2,63 @@
 
 local H = {}
 
-local function sendfile(conn, fn)
-  local f = file.open(fn)
-
-  if f == nil then
-    conn:close()
+local function sendDocument(conn, fn)
+  if fn == nil then
+    conn:send("HTTP/1.0 404 Not found\r\n\r\n")
+    conn:on('sent', function (c)
+      c:close()
+    end)
     return
   end
 
   conn:on('sent', function(c)
-     local buf = f:read(1024)
+     local buf = fn()
      if buf then
        c:send(buf)
      else
        c:close()
-       f:close()
      end
   end)
 
-  local buf = f:read(1024)
+  local buf = fn()
   conn:send(buf)
 end
 
+-- returns a function that reads blocks of the file and then nil
+local function fileReader(fn)
+  local f = file.open(fn)
+
+  if f == nil then
+    return nil
+  end
+
+  return function() 
+    local buf = f:read(1024)
+    if not buf then
+      f:close()
+    end
+    return buf
+  end
+end
+
+local function getReader(fn)
+  local result = fileReader(fn)
+  if result then
+    return result
+  end
+
+  local ok, result = pcall(require, "__" .. string.gsub(fn, "[.]", "_"))
+  if ok then
+    return result()
+  end
+end
+
+function sendfile(conn, fn)
+  sendDocument(conn, getReader(fn))
+end
+
 H["GET/"] = function(conn)
-  sendfile(conn, "index.html") 
+  sendfile(conn, "index.html")
 end
 
 local srv = net.createServer(net.TCP)

@@ -24,7 +24,7 @@ end
 local function getStatus()
   local R = {}
   R.time = {rtctime.get()}
-  R.hms = t.getpos()
+  R.hms = {t.gethms()}
   R.running = t.getrunning()
   R.config = config.table
   R.boardConfig = require "config"('board').table
@@ -34,6 +34,7 @@ local function getStatus()
   R.isBipolar = pulser.getIsBipolar()
   R.millivolts = powerstatus.millivolts()
   R.leds = led.getHexColors()
+  R.pos = t.getpos()
   return R 
 end
 
@@ -47,9 +48,6 @@ function M.register(adder)
   end)
   
   adder("POST", "/set", function (conn, vars)
-    if vars.start then
-      control.start()
-    end
     if vars.stop then
       control.stop()
     end
@@ -60,6 +58,9 @@ function M.register(adder)
       if tz.exists(vars.zone) then
         config.tz = vars.zone
       end
+    end
+    if vars.start then
+      control.start()
     end
     wrapit(getStatus)(conn)
   end)

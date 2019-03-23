@@ -1,9 +1,14 @@
-HTTP/1.1 200 OK
-Content-type: text/html
-Connection:close
-
 <html><head>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<style>
+.led {
+    height: 25px;
+    width: 25px;
+    background-color: #fff;
+    border-radius: 50%;
+    display: inline-block;
+}
+</style>
 </head><body>
 <h1>Clock</h1>
 MAC: <span id="mac"></span><br>
@@ -11,6 +16,8 @@ MAC: <span id="mac"></span><br>
 Timezone: <span id="tz"></span><br>
 Last sync: <span id="lastsync"></span><br>
 Now: <span id="now"></span><br>
+
+Leds: <span id=leds></span> <br>
     
 <button type="button" id="stop">Stop</button>
 <button type="button" id="start">Start</button>
@@ -53,7 +60,11 @@ function handleResponse( result ) {
         $("#now").text(new Date(1000*(result.time[0]) + result.time[1] / 1000).toISOString());
         $("#stop").prop('disabled', !result.running);        
         $("#start").prop('disabled', result.running);
-      }
+        for (var i = 0; i < 3; i++) {
+          $('#led' + i).css('background-color', '#' + result.leds[i]);
+        }
+}
+
 function refresh() {
     $.ajax({
       url: "/status",
@@ -61,7 +72,15 @@ function refresh() {
     });
 }
 
-$(document).ready(function()
+function addleds() {
+  var leds = $('#leds');
+  for (var i = 0; i < 3; i++) {
+    leds.append($('<span class=led id=led' + i + '></span>'));
+  }
+}
+
+$(document).ready(function() {
+  addleds();
   refresh();
 });
 
