@@ -62,7 +62,7 @@ H["GET/"] = function(conn)
 end
 
 local srv = net.createServer(net.TCP)
-srv:listen(80, function(conn)
+local function onNewConnection(conn)
     conn:on("receive", function(c, request)
         local _, _, method, path, vars = string.find(request, "([A-Z]+) (.*)?(.+) HTTP")
         if method == nil then
@@ -79,9 +79,16 @@ srv:listen(80, function(conn)
         if f == nil then
            sendfile(c, "notfound.html")
         else
-           f(c, _GET)
+           f(c, _GET, request)
         end        
     end)
+end
+
+tmr.create():alarm(1000, tmr.ALARM_SEMI, function(t)
+  local ok = pcall(function() srv:listen(80, onNewConnection) end)
+  if not ok then
+    t:start()
+  end
 end)
 
 return function (method, path, fn) 

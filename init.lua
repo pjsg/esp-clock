@@ -1,7 +1,8 @@
 if file.exists("forcelfs.img") then
   file.remove("lfs.img")
   file.rename("forcelfs.img", "lfs.img")
-  node.flashreload("lfs.img")
+  local result = node.flashreload("lfs.img")
+  print("Failed to flashreload", result)
 end
 
 local _init = node.flashindex('_init')
@@ -18,7 +19,7 @@ else
   led.setD5(led.red)
 
   i2c.setup(0, 6, 5, 400000)
-  disp = u8g2.ssd1306_i2c_128x64_noname(0, 0x3c)
+  local disp = u8g2.ssd1306_i2c_128x64_noname(0, 0x3c)
   local ok, splashdata = pcall(dofile, 'splash.lua')
   if not ok or not splashdata then
     local splash = file.open("splash.mono")

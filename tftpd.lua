@@ -7,8 +7,9 @@ return function(close_cb)
     local _conn = nil -- connection store
 
     local _tmrid = tmr.create()
+    local _retry_max = 5
     local _retry = 5
-    local _tmrtimeout = 1000
+    local _tmrtimeout = 3000
 
     local function reset()
         _tblk=0
@@ -16,7 +17,7 @@ return function(close_cb)
         _fn = {}
         _tmrid:stop()
         _conn = nil
-        _retry = 5
+        _retry = _retry_max
         collectgarbage()  --gc when finished
     end
 
@@ -60,7 +61,7 @@ return function(close_cb)
             else -- _lock is 1 or 4
                 sendblk(port, ip, _conn)  --retransmit data
             end
-            _tmrid:alarm(_tmrtimeout, 0, function () timeoutCB(port, ip) end)
+            _tmrid:alarm(_tmrtimeout * (_retry_max - _retry), 0, function () timeoutCB(port, ip) end)
             return
         end
         print("Connection timed out")
@@ -95,7 +96,7 @@ return function(close_cb)
                 return
             end
             alarmstop()
-            _retry=5
+            _retry= _retry_max
         end
 
         if(op==1) then

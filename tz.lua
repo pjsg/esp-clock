@@ -6,9 +6,10 @@ local tstart = 0
 local tend = 0
 local toffset = 0
 local config = require "config"("config")
+local romfile = require "romfile"
 
 function M.exists(zone)
-  return file.exists(zone + ".zone")
+  return romfile.exists(zone + ".zone")
 end
 
 function M.getzones()
@@ -26,7 +27,7 @@ function M.load(t)
   tend = 0x7fffffff
   tstart = 0
 
-  local z = file.open(config.tz .. ".zone", "r")
+  local z = romfile.open(config.tz .. ".zone", "r")
 
   if z then
     local hdr = z:read(20)

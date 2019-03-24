@@ -38,6 +38,8 @@ local function getStatus()
   return R 
 end
 
+M.getStatus = getStatus
+
 function M.register(adder)
   local function addjson(path, fn)
     adder("GET", path, wrapit(fn)) 

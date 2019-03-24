@@ -7,7 +7,8 @@ local power = require "powerstatus"
 local tz = require "tz"
 local led = require "led"
 
-local display = require "display"(disp)
+local display = require "display"
+display.init()
 
 local timer = tmr.create()
 
@@ -18,6 +19,9 @@ local board = require "config"('board')
 local pulsePerSecond
 local pulsePerRev
 local maxSpeed
+
+local running = false
+
 
 local function gethms(sec)
   local s = sec % 60
@@ -48,9 +52,46 @@ local function drawState(disp)
   disp:drawStr(0, 40, "C: " .. clockpos)
 end
 
-tmr.create():alarm(250, tmr.ALARM_AUTO, function()
+local capture
+local captureBuffer
+
+
+tmr.create():alarm(250, tmr.ALARM_SEMI, function(t)
   display.paint(drawState)
+  if capture then
+    local ok, err = pcall(function ()
+      local single = table.concat(captureBuffer)
+      captureBuffer = {}
+      capture(single)
+    end)
+    captureBuffer = {}
+    if not ok then
+      print("Caught error from capture callback", err)
+    end
+  end
+  t:start()
 end)
+
+M.setCapture = function(fn)
+  capture = fn
+  if capture then
+    display.init(function(line)
+      local ok, err = pcall(function(line)
+        if line == nil then
+          captureBuffer = {}
+        else
+          table.insert(captureBuffer, line:sub(1, 1 + 2 * string.byte(line, 1)))
+        end
+      end, line)
+      if not ok then
+        print("Caught error from capture assembly", err)
+      end 
+    end)
+  else
+    captureBuffer = {}
+    display.init()
+  end
+end
 
 -- tick runs every 500ms (or so) to keep the clock in phase
 
@@ -92,7 +133,7 @@ end
 local maxBrightness = 256
 local minBrightness = 16
 
-tmr.create():alarm(60, tmr.ALARM_AUTO, function() 
+tmr.create():alarm(60000, tmr.ALARM_AUTO, function() 
   local sec, usec = rtctime.get()
 
   sec = sec + tz.getoffset(sec)
@@ -117,9 +158,8 @@ tmr.create():alarm(60, tmr.ALARM_AUTO, function()
   end
 end)
 
-local running = false
-
 M.start = function ()
+  if running then return end
   local pps = board.pps_(1)
   pulsePerSecond = pps
   pulsePerRev = 43200 * pulsePerSecond
@@ -138,6 +178,7 @@ M.start = function ()
 end
 
 M.stop = function ()
+  if not running then return end
   timer:stop()
 
   pulser.stop(function()   

@@ -1,1 +1,4 @@
 *~
+*.uploaded
+__*.lua
+*.img
