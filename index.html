@@ -1,6 +1,9 @@
 <html><head>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
 <style>
+body {
+  font-family: sans-serif;
+}
 .led {
     height: 25px;
     width: 25px;
@@ -14,6 +17,9 @@
     border: 1px solid;
     vertical-align: middle;
 }
+input.narrow {
+  width: 3em;
+}
 </style>
 </head><body>
 <h1>Clock</h1>
@@ -22,8 +28,10 @@ MAC: <span id="mac"></span><br>
 Timezone: <span id="tz"></span><br>
 Last sync: <span id="lastsync"></span><br>
 Now: <span id="now"></span><br>
+Clock: <input class=narrow id=chr type=number min=0 max=11></input>:<input class=narrow id=cmn type=number min=0 max=60></input>:<input class=narrow id=csc type=number min=0 max=60></input>
+<button type="button" id="set">Set</button>
 
-Front Panel<br>
+<br>Front Panel<br>
 <div>
 <span id=led0 class="led"></span>
 <canvas id=display width=128 height=64 ></canvas>
@@ -94,6 +102,9 @@ function rleDecode(ctx, b) {
   ctx.resetTransform();
 }
 
+var pps = 1;
+var lastpos = 0;
+
 function handleResponse( result ) {
       if (result.display) {
         if (result.first) {
@@ -116,6 +127,13 @@ function handleResponse( result ) {
         for (var i = 0; i < 3; i++) {
           $('#led' + i).css('background-color', '#' + result.leds[i]);
         }
+        if (result.pos != lastpos) {
+          $("#chr").val(result.hms[0]);
+          $("#cmn").val(result.hms[1]);
+          $("#csc").val(result.hms[2]);
+          lastpos = result.pos;
+        }
+        pps = result.boardConfig.pps;
       }
 }
 
@@ -137,6 +155,14 @@ $(document).ready(function() {
   refresh();
 });
 
+$("#set").on('click', function() {
+  var val = ($('#chr').val() * 3600 + $('#cmn').val() * 60 + $('#csc').val() * 1) * pps;
+  $.ajax({
+    url: "/set?pos=" + val,
+    method: "POST",
+    success: handleResponse
+  });
+});
 $("#stop").on('click', function() {
   $.ajax({
     url: "/set?stop=1",

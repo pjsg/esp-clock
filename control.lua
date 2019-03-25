@@ -44,7 +44,7 @@ local function drawState(disp)
   local info = string.format("%02d:%02d:%02d", h, m ,s)
 
   h, m, s = time.gethms()
-  local clockpos = string.format("%02d:%02d:%02d", h, m ,s)
+  local clockpos = string.format("%2d:%02d:%02d", h, m ,s)
 
   disp:drawStr(0, 0, info)
 
