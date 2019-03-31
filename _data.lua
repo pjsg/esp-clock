@@ -10,13 +10,13 @@ return function (socket)
     end
   end
   t:alarm(1000, tmr.ALARM_AUTO, dosend)
+  register_object("data-timer", t)
   function socket.onclose()
     node.setcpufreq(node.CPU80MHZ)
     t:unregister()
     control.setCapture(nil)
     t = nil
   end
-  if true then
   control.setCapture(function (data) 
     if socket.getPendingCount() < 2 then
       for i = 1, #data, 768 do
@@ -24,7 +24,6 @@ return function (socket)
       end
     end
   end)
-  end
   dosend()
 end
 

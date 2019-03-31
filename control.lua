@@ -74,6 +74,7 @@ end)
 
 M.setCapture = function(fn)
   capture = fn
+  register_object("capture-fn", fn)
   if capture then
     display.init(function(line)
       local ok, err = pcall(function(line)

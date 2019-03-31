@@ -1,5 +1,12 @@
 local config = require "config"("config")
 
+object_table = setmetatable({}, {__mode='v'})
+local object_table_index = 1
+function register_object(type_name, value) 
+  object_table[type_name .. object_table_index] = value
+  object_table_index = object_table_index + 1
+end
+
 local function printrtc()
   local _, _, rate = rtctime.get()
   print ('rate', rate)

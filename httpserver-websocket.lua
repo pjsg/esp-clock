@@ -69,14 +69,17 @@ local function acceptKey(key)
 end
 
 return function (connection, payload)
+  register_object('websocket-connection', connection)
   local buffer = false
   local socket = {}
+  register_object('websocket-socket', socket)
   local queue = {}
+  register_object('websocket-queue', queue)
   local waiting = false
-  local function onSend()
+  local function onSend(c)
     if queue[1] then
       local data = table.remove(queue, 1)
-      return connection:send(data, onSend)
+      return c:send(data, onSend)
     end
     waiting = false
   end
@@ -124,11 +127,13 @@ return function (connection, payload)
     end
   end)
 
-  connection:on("disconnection", function(c, _)
+  connection:on("disconnection", function(_, _)
     if socket.onclose ~= nil then
       print("Closed, queue size =", #queue)
       socket.onclose()
     end
+    socket = nil
+    connection = nil
   end)
 
   local req = require("httpserver-request")(payload)

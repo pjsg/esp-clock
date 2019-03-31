@@ -22,6 +22,7 @@ end
 
 M.init = function(fn)
   disp = u8g2.ssd1306_i2c_128x64_noname(0, 0x3c, fn)
+  register_object("display-init", disp)
 end
 
 return M

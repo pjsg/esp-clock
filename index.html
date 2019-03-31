@@ -1,5 +1,6 @@
 <html><head>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
 <style>
 body {
   font-family: sans-serif;
@@ -18,18 +19,63 @@ body {
     vertical-align: middle;
 }
 input.narrow {
-  width: 3em;
+  width: 12em;
+}
+.runstopswitch {
+    position: relative; width: 90px;
+    -webkit-user-select:none; -moz-user-select:none; -ms-user-select: none;
+}
+.runstopswitch-checkbox {
+    display: none;
+}
+.runstopswitch-label {
+    display: block; overflow: hidden; cursor: pointer;
+    border: 2px solid #999999; border-radius: 20px;
+}
+.runstopswitch-inner {
+    display: block; width: 200%; margin-left: -100%;
+    transition: margin 0.3s ease-in 0s;
+}
+.runstopswitch-inner:before, .runstopswitch-inner:after {
+    display: block; float: left; width: 50%; height: 30px; padding: 0; line-height: 30px;
+    font-size: 14px; color: white; font-family: Trebuchet, Arial, sans-serif; font-weight: bold;
+    box-sizing: border-box;
+}
+.runstopswitch-inner:before {
+    content: "Run";
+    padding-left: 10px;
+    background-color: #34A7C1; color: #FFFFFF;
+}
+.runstopswitch-inner:after {
+    content: "Stop";
+    padding-right: 10px;
+    background-color: #EEEEEE; color: #999999;
+    text-align: right;
+}
+.runstopswitch-switch {
+    display: block; width: 18px; margin: 6px;
+    background: #FFFFFF;
+    position: absolute; top: 0; bottom: 0;
+    right: 56px;
+    border: 2px solid #999999; border-radius: 20px;
+    transition: all 0.3s ease-in 0s; 
+}
+.runstopswitch-checkbox:checked + .runstopswitch-label .runstopswitch-inner {
+    margin-left: 0;
+}
+.runstopswitch-checkbox:checked + .runstopswitch-label .runstopswitch-switch {
+    right: 0px; 
 }
 </style>
+<link href="https://cdn.jsdelivr.net/npm/jquery-btnswitch@1.0.1/dist/jquery.btnswitch.min.css" rel="stylesheet">
 </head><body>
+<script src="https://cdn.jsdelivr.net/npm/jquery-btnswitch@1.0.1/dist/jquery.btnswitch.min.js" integrity="sha256-Ixinrhgq/RaeE+r/AU5gsb0TSVOLL3i7KsFn/eudREc=" crossorigin="anonymous"></script>
 <h1>Clock</h1>
 MAC: <span id="mac"></span><br>
 
 Timezone: <span id="tz"></span><br>
 Last sync: <span id="lastsync"></span><br>
 Now: <span id="now"></span><br>
-Clock: <input class=narrow id=chr type=number min=0 max=11></input>:<input class=narrow id=cmn type=number min=0 max=60></input>:<input class=narrow id=csc type=number min=0 max=60></input>
-<button type="button" id="set">Set</button>
 
 <br>Front Panel<br>
 <div>
@@ -40,9 +86,19 @@ Clock: <input class=narrow id=chr type=number min=0 max=11></input>:<input class
 </div>
 
 <br>
-    
-<button type="button" id="stop">Stop</button>
-<button type="button" id="start">Start</button>
+
+<div class="runstopswitch">
+    <input type="checkbox" name="runstopswitch" class="runstopswitch-checkbox" id="runstop" checked>
+    <label class="runstopswitch-label" for="runstop">
+        <span class="runstopswitch-inner"></span>
+        <span class="runstopswitch-switch"></span>
+    </label>
+</div>
+
+<div id='setter' style='visibility: hidden'>
+Clock: <input class=narrow id=hms type=text></input>
+<button type="button" id="set">Set</button>
+</div>
 <script>
 var sample = 
 {
@@ -102,6 +158,13 @@ function rleDecode(ctx, b) {
   ctx.resetTransform();
 }
 
+function leftFillNum(num, width){
+  return num
+    .toString()
+    .padStart(width,0)
+}
+
+
 var pps = 1;
 var lastpos = 0;
 
@@ -122,15 +185,19 @@ function handleResponse( result ) {
         $( "#tz" ).text(result.config.tz);
         $("#lastsync").text(new Date(1000*result.ntp.secs + result.ntp.usecs / 1000).toISOString());
         $("#now").text(new Date(1000*(result.time[0]) + result.time[1] / 1000).toISOString());
-        $("#stop").prop('disabled', !result.running);        
-        $("#start").prop('disabled', result.running);
+        $("#runstop").prop('checked', result.running);
+        $('#setter').css('visibility', !result.running ? 'visible' : 'hidden');
         for (var i = 0; i < 3; i++) {
           $('#led' + i).css('background-color', '#' + result.leds[i]);
         }
         if (result.pos != lastpos) {
-          $("#chr").val(result.hms[0]);
-          $("#cmn").val(result.hms[1]);
-          $("#csc").val(result.hms[2]);
+          var hms = "" + result.hms[0] + ":" + leftFillNum(result.hms[1], 2) + ":" + leftFillNum(result.hms[2], 2);
+          if (result.boardConfig.pps > 1) {
+            var fraction = result.pos % result.boardConfig.pps;
+            var ms = Math.floor(fraction * 1000 / result.boardConfig.pps);
+            hms = hms + "." + leftFillNum(ms, 3);
+          }
+          $("#hms").val(hms);
           lastpos = result.pos;
         }
         pps = result.boardConfig.pps;
@@ -154,28 +221,42 @@ function addleds() {
 $(document).ready(function() {
   refresh();
 });
+$('#hms').on('change', function() {
+  var mom = Moment.utc($('#hms').val(), 'hh:mm:ss.SSS');
+
+  $('#set').prop('disabled', !mom.isValid());
+});
 
 $("#set").on('click', function() {
-  var val = ($('#chr').val() * 3600 + $('#cmn').val() * 60 + $('#csc').val() * 1) * pps;
+  var mom = Moment.utc($('#hms').val(), 'hh:mm:ss.SSS');
+  var val = mom.getTime();
+  val = Math.round(val * pps / 1000);
   $.ajax({
     url: "/set?pos=" + val,
     method: "POST",
     success: handleResponse
   });
 });
-$("#stop").on('click', function() {
+function doStop() {
   $.ajax({
     url: "/set?stop=1",
     method: "POST",
     success: handleResponse
   });
-});
-$("#start").on('click', function() {
+};
+function doStart() {
   $.ajax({
     url: "/set?start=1",
     method: "POST",
     success: handleResponse
   });
+};
+$('#runstop').change(function() {
+  if ($(this).is(':checked')) {
+    doStart();
+  } else {
+    doStop();
+  }
 });
 </script>
 </body></html>
