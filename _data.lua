@@ -17,10 +17,15 @@ return function (socket)
     control.setCapture(nil)
     t = nil
   end
+  local lastHash
   control.setCapture(function (data) 
     if socket.getPendingCount() < 2 then
-      for i = 1, #data, 768 do
-        socket.send(sjson.encode({ display=crypto.toBase64(data:sub(i, i + 767)), first=(i == 1), last=(i + 768 > #data) }), 1)
+      local hash = crypto.hash("sha1", data)
+      if hash ~= lastHash then
+        for i = 1, #data, 768 do
+          socket.send(sjson.encode({ display=crypto.toBase64(data:sub(i, i + 767)), first=(i == 1), last=(i + 768 > #data) }), 1)
+        end
+        lastHash = hash
       end
     end
   end)

@@ -22,7 +22,7 @@ input.narrow {
   width: 12em;
 }
 .runstopswitch {
-    position: relative; width: 90px;
+    position: relative; width: 134px;
     -webkit-user-select:none; -moz-user-select:none; -ms-user-select: none;
 }
 .runstopswitch-checkbox {
@@ -56,7 +56,7 @@ input.narrow {
     display: block; width: 18px; margin: 6px;
     background: #FFFFFF;
     position: absolute; top: 0; bottom: 0;
-    right: 56px;
+    right: 100px;
     border: 2px solid #999999; border-radius: 20px;
     transition: all 0.3s ease-in 0s; 
 }
@@ -71,13 +71,7 @@ input.narrow {
 </head><body>
 <script src="https://cdn.jsdelivr.net/npm/jquery-btnswitch@1.0.1/dist/jquery.btnswitch.min.js" integrity="sha256-Ixinrhgq/RaeE+r/AU5gsb0TSVOLL3i7KsFn/eudREc=" crossorigin="anonymous"></script>
 <h1>Clock</h1>
-MAC: <span id="mac"></span><br>
 
-Timezone: <span id="tz"></span><br>
-Last sync: <span id="lastsync"></span><br>
-Now: <span id="now"></span><br>
-
-<br>Front Panel<br>
 <div>
 <span id=led0 class="led"></span>
 <canvas id=display width=128 height=64 ></canvas>
@@ -90,14 +84,20 @@ Now: <span id="now"></span><br>
 <div class="runstopswitch">
     <input type="checkbox" name="runstopswitch" class="runstopswitch-checkbox" id="runstop" checked>
     <label class="runstopswitch-label" for="runstop">
-        <span class="runstopswitch-inner"></span>
+        <span id="rss-inner" class="runstopswitch-inner"></span>
         <span class="runstopswitch-switch"></span>
     </label>
 </div>
 
+<br>
 <div id='setter' style='visibility: hidden'>
 Clock: <input class=narrow id=hms type=text></input>
 <button type="button" id="set">Set</button>
+<br>
+MAC: <span id="mac"></span><br>
+Timezone: <span id="tz"></span><br>
+Last sync: <span id="lastsync"></span><br>
+Now: <span id="now"></span><br>
 </div>
 <script>
 var sample = 
@@ -130,6 +130,26 @@ var sample =
         "server": "192.168.1.21"
     }
 };
+
+var ss = document.styleSheets;
+
+var rssBefore;
+var rssAfter;
+
+for (i = 0; i < ss.length; i++) {
+  var rules = ss[i];
+  if (!rules.href) {
+    for (j = 0; j < rules.cssRules.length; j++) {
+      var r = rules.cssRules[j];
+      if (r.selectorText == ".runstopswitch-inner::before") {
+        rssBefore = r.style;
+      }
+      if (r.selectorText == ".runstopswitch-inner::after") {
+        rssAfter = r.style;
+      }
+    }
+  }
+}
 
 var display;
 
@@ -168,6 +188,30 @@ function leftFillNum(num, width){
 var pps = 1;
 var lastpos = 0;
 
+var buttonstate = 0;    // -1 is stopping, +1 is starting
+
+function setRunStop(state) {
+  $("#runstop").prop('checked', state);
+  if (buttonstate < 0) {
+    if (!state) {
+      buttonstate = 0;
+    }
+    rssBefore.content = "\"Run\"";
+    rssAfter.content = "\"Stopping\"";
+  } else if (buttonstate > 0) {
+    if (state) {
+      buttonstate = 0;
+    }
+    rssBefore.content = "\"Starting\"";
+    rssAfter.content = "\"Stop\"";
+  }
+
+  if (buttonstate == 0) {
+    rssBefore.content = "\"Run\"";
+    rssAfter.content = "\"Stop\"";
+  }
+}
+
 function handleResponse( result ) {
       if (result.display) {
         if (result.first) {
@@ -185,7 +229,7 @@ function handleResponse( result ) {
         $( "#tz" ).text(result.config.tz);
         $("#lastsync").text(new Date(1000*result.ntp.secs + result.ntp.usecs / 1000).toISOString());
         $("#now").text(new Date(1000*(result.time[0]) + result.time[1] / 1000).toISOString());
-        $("#runstop").prop('checked', result.running);
+        setRunStop(result.running);
         $('#setter').css('visibility', !result.running ? 'visible' : 'hidden');
         for (var i = 0; i < 3; i++) {
           $('#led' + i).css('background-color', '#' + result.leds[i]);
@@ -209,6 +253,9 @@ function refresh() {
     ws.onmessage = function(event) {
       handleResponse(JSON.parse(event.data));
     };
+    ws.onclose = function() {
+      window.setTimeout(refresh, 5000);
+    };
 }
 
 function addleds() {
@@ -222,14 +269,14 @@ $(document).ready(function() {
   refresh();
 });
 $('#hms').on('change', function() {
-  var mom = Moment.utc($('#hms').val(), 'hh:mm:ss.SSS');
+  var mom = moment.utc($('#hms').val(), 'hh:mm:ss.SSS');
 
   $('#set').prop('disabled', !mom.isValid());
 });
 
 $("#set").on('click', function() {
-  var mom = Moment.utc($('#hms').val(), 'hh:mm:ss.SSS');
-  var val = mom.getTime();
+  var mom = moment.utc($('#hms').val(), 'hh:mm:ss.SSS');
+  var val = mom.valueOf() % 86400000;
   val = Math.round(val * pps / 1000);
   $.ajax({
     url: "/set?pos=" + val,
@@ -238,17 +285,17 @@ $("#set").on('click', function() {
   });
 });
 function doStop() {
+  buttonstate = -1;
   $.ajax({
     url: "/set?stop=1",
     method: "POST",
-    success: handleResponse
   });
 };
 function doStart() {
+  buttonstate = 1;
   $.ajax({
     url: "/set?start=1",
     method: "POST",
-    success: handleResponse
   });
 };
 $('#runstop').change(function() {

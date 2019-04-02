@@ -36,6 +36,7 @@ end
 
 local function drawState(disp)
   local sec, usec = rtctime.get()
+  local ticks, even = pulser.status()
 
   sec = sec + tz.getoffset(sec)
 
@@ -43,7 +44,9 @@ local function drawState(disp)
 
   local info = string.format("%02d:%02d:%02d", h, m ,s)
 
-  h, m, s = time.gethms()
+  sec = time.getposFromTicks(ticks)
+
+  s, m, h = gethms(sec)
   local clockpos = string.format("%2d:%02d:%02d", h, m ,s)
 
   disp:drawStr(0, 0, info)
@@ -55,8 +58,7 @@ end
 local capture
 local captureBuffer
 
-
-tmr.create():alarm(250, tmr.ALARM_SEMI, function(t)
+function doRepaint(t)
   display.paint(drawState)
   if capture then
     local ok, err = pcall(function ()
@@ -69,8 +71,16 @@ tmr.create():alarm(250, tmr.ALARM_SEMI, function(t)
       print("Caught error from capture callback", err)
     end
   end
-  t:start()
-end)
+  local sec, usec = rtctime.get()
+
+  if usec > 600000 then
+    t:alarm((1000000 - usec) / 1000, tmr.ALARM_SINGLE, doRepaint)
+  else
+    t:alarm(300, tmr.ALARM_SINGLE, doRepaint)
+  end
+end
+
+tmr.create():alarm(250, tmr.ALARM_SINGLE, doRepaint)
 
 M.setCapture = function(fn)
   capture = fn

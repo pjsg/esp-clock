@@ -62,7 +62,9 @@ function M.start()
 end
 
 function M.setpos(pos)
+  local original = clockpos
   clockpos = pos % pulsePerRev
+  startpos = startpos + clockpos - original
   rtcmem.write32(MEMPOS, clockpos + pulse)
   rtcmem.write32(MEMPOS + 1, bit.bxor(-1, clockpos + pulse))
 end
@@ -81,6 +83,10 @@ end
 
 function M.getpos()
   return clockpos
+end
+
+function M.getposFromTicks(ticks)
+  return ((startpos + ticks) % pulsePerRev) / pulsePerSecond;
 end
 
 function M.getrunning()

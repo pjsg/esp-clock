@@ -142,6 +142,10 @@ end
 
 -- gets the number of ticks since start and even
 M.status = function()
+  if not pulser then
+    return 0, 0
+  end
+
   local pos, steps, offset, new = pulser:getstate()
 
   -- when we are in a waiting state (odd) then we have completed

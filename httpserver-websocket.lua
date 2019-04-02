@@ -77,20 +77,20 @@ return function (connection, payload)
   register_object('websocket-queue', queue)
   local waiting = false
   local function onSend(c)
-    if queue[1] then
-      local data = table.remove(queue, 1)
-      return c:send(data, onSend)
+    while queue[1] do
+      local data = queue[1]
+      local ok, err = pcall(function() c:send(data, onSend) end)
+      if not ok then
+        return
+      end
+      table.remove(queue, 1)
     end
     waiting = false
   end
   function socket.send(...)
     local data = encode(...)
-    if not waiting then
-      waiting = true
-      connection:send(data, onSend)
-    else
-      queue[#queue + 1] = data
-    end
+    queue[#queue + 1] = data
+    onSend(connection)
   end
 
   function socket.getPendingCount()
