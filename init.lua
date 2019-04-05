@@ -16,7 +16,7 @@ else
   local led = require "led"
 
   led.init()
-  led.setD5(led.red)
+  led.setD3(led.red)
 
   i2c.setup(0, 6, 5, 400000)
   local disp = u8g2.ssd1306_i2c_128x64_noname(0, 0x3c)
@@ -40,7 +40,7 @@ else
   wifi.setmode(wifi.STATION)
 
   enduser_setup.start(function() 
-    led.setD5(led.yellow)
+    led.setD3(led.yellow)
     tmr.create():alarm(200, tmr.ALARM_SINGLE, function () 
       enduser_setup.stop()
       dofile("clockinit.lua")

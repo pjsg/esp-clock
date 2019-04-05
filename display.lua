@@ -17,7 +17,10 @@ end
 M.paint = function (drawfn)
   prepare()
   drawfn(disp)
+  local before = tmr.now()
   disp:sendBuffer()
+  local duration = tmr.now() - before
+  last_duration = duration
 end
 
 M.init = function(fn)

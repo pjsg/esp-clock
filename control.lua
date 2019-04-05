@@ -35,6 +35,9 @@ local function gethms(sec)
 end
 
 local function drawState(disp)
+  if not pulsePerSecond then
+    return
+  end
   local sec, usec = rtctime.get()
   local ticks, even = pulser.status()
 
@@ -44,7 +47,7 @@ local function drawState(disp)
 
   local info = string.format("%02d:%02d:%02d", h, m ,s)
 
-  sec = time.getposFromTicks(ticks)
+  sec = time.getposFromTicks(ticks) / pulsePerSecond
 
   s, m, h = gethms(sec)
   local clockpos = string.format("%2d:%02d:%02d", h, m ,s)
@@ -74,7 +77,7 @@ function doRepaint(t)
   local sec, usec = rtctime.get()
 
   if usec > 600000 then
-    t:alarm((1000000 - usec) / 1000, tmr.ALARM_SINGLE, doRepaint)
+    t:alarm((1000000 - usec) / 1000 + 1, tmr.ALARM_SINGLE, doRepaint)
   else
     t:alarm(300, tmr.ALARM_SINGLE, doRepaint)
   end
@@ -180,8 +183,9 @@ M.start = function ()
     maxSpeed = 6
   end
   time.init(pps)
+  local pos, even = time.getpos_even()
   pulser.init(board.bipolar_(false), pps, pulseWidth, maxSpeed * pps)
-  pulser.start(0, true)
+  pulser.start(0, even)
   timer:stop()
   tick()
   running = true

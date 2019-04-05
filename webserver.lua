@@ -23,6 +23,8 @@ end
 
 local function getStatus()
   local R = {}
+  local ticks, even = pulser.status()
+
   R.time = {rtctime.get()}
   R.hms = {t.gethms()}
   R.running = t.getrunning()
@@ -34,7 +36,7 @@ local function getStatus()
   R.isBipolar = pulser.getIsBipolar()
   R.millivolts = powerstatus.millivolts()
   R.leds = led.getHexColors()
-  R.pos = t.getpos()
+  R.pos = t.getposFromTicks(ticks)
   return R 
 end
 
@@ -54,7 +56,7 @@ function M.register(adder)
       control.stop()
     end
     if vars.pos then
-      t.setpos(vars.pos)
+      t.sethands(vars.pos)
     end
     if vars.zone then
       if tz.exists(vars.zone) then

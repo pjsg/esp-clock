@@ -22,7 +22,7 @@ input.narrow {
   width: 12em;
 }
 .runstopswitch {
-    position: relative; width: 134px;
+    position: relative; width: 94px;
     -webkit-user-select:none; -moz-user-select:none; -ms-user-select: none;
 }
 .runstopswitch-checkbox {
@@ -56,7 +56,7 @@ input.narrow {
     display: block; width: 18px; margin: 6px;
     background: #FFFFFF;
     position: absolute; top: 0; bottom: 0;
-    right: 100px;
+    right: 60px;
     border: 2px solid #999999; border-radius: 20px;
     transition: all 0.3s ease-in 0s; 
 }
@@ -88,6 +88,8 @@ input.narrow {
         <span class="runstopswitch-switch"></span>
     </label>
 </div>
+
+<span id="params"></span>
 
 <br>
 <div id='setter' style='visibility: hidden'>
@@ -191,19 +193,21 @@ var lastpos = 0;
 var buttonstate = 0;    // -1 is stopping, +1 is starting
 
 function setRunStop(state) {
+  var ll = "state=" + state + " bs=" + buttonstate;
+  $("#params").text(ll);
   $("#runstop").prop('checked', state);
   if (buttonstate < 0) {
     if (!state) {
       buttonstate = 0;
     }
-    rssBefore.content = "\"Run\"";
-    rssAfter.content = "\"Stopping\"";
+    rssBefore.content = "\"Stopping\"";
+    rssAfter.content = "\"Stop\"";
   } else if (buttonstate > 0) {
     if (state) {
       buttonstate = 0;
     }
-    rssBefore.content = "\"Starting\"";
-    rssAfter.content = "\"Stop\"";
+    rssBefore.content = "\"Run\"";
+    rssAfter.content = "\"Starting\"";
   }
 
   if (buttonstate == 0) {
@@ -248,13 +252,27 @@ function handleResponse( result ) {
       }
 }
 
+var timeout_error;
+var timeout_close;
+
 function refresh() {
+    if (timeout_close) {
+      window.clearTimeout(timeout_close);
+      timeout_close = 0;
+    }
+    if (timeout_error) {
+      window.clearTimeout(timeout_error);
+      timeout_error = 0;
+    }
     var ws = new WebSocket("ws://" + window.location.host + "/data");
     ws.onmessage = function(event) {
       handleResponse(JSON.parse(event.data));
     };
+    ws.onerror = function() {
+      timeout_error = window.setTimeout(refresh, 5000);
+    };
     ws.onclose = function() {
-      window.setTimeout(refresh, 5000);
+      timeout_close = window.setTimeout(refresh, 5000);
     };
 }
 
@@ -286,6 +304,7 @@ $("#set").on('click', function() {
 });
 function doStop() {
   buttonstate = -1;
+  setRunStop(true);
   $.ajax({
     url: "/set?stop=1",
     method: "POST",
@@ -293,17 +312,19 @@ function doStop() {
 };
 function doStart() {
   buttonstate = 1;
+  setRunStop(false);
   $.ajax({
     url: "/set?start=1",
     method: "POST",
   });
 };
-$('#runstop').change(function() {
+$('#runstop').on('click', function() {
   if ($(this).is(':checked')) {
     doStart();
   } else {
     doStop();
   }
+  return false;
 });
 </script>
 </body></html>

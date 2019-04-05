@@ -48,6 +48,7 @@ t1:alarm(1000, tmr.ALARM_AUTO, function(t)
          print ("no ip")
          return
        end
+       led.setD3(led.yellow)
        print ("got ip")
        t:unregister()
        syslog:send("Booted: " .. sjson.encode({node.bootreason()}))
@@ -60,7 +61,7 @@ t1:alarm(1000, tmr.ALARM_AUTO, function(t)
        end)
        local control = require "control"
        tmr.create():alarm(10000, tmr.ALARM_SINGLE, function() 
-         led.setD5(led.green)
+         led.setD3(led.green)
          control.start()
        end)
        dofile("tftpd.lua")(function (fn)

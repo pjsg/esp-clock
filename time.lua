@@ -23,7 +23,7 @@ function M.init(pps)
   if -1 == bit.bxor(mem, rtcmem.read32(MEMPOS+1)) then
     clockpos = bit.band(mem, PULSEVAL - 1)
     pulse = bit.band(mem, PULSEVAL)
-    print ('restored pos', clockpos)
+    print ('restored pos', clockpos, pulse)
   else
     print ('Resetting to 0', mem, rtcmem.read32(MEMPOS+1))
     clockpos = 0
@@ -62,11 +62,15 @@ function M.start()
 end
 
 function M.setpos(pos)
-  local original = clockpos
   clockpos = pos % pulsePerRev
-  startpos = startpos + clockpos - original
   rtcmem.write32(MEMPOS, clockpos + pulse)
   rtcmem.write32(MEMPOS + 1, bit.bxor(-1, clockpos + pulse))
+end
+
+function M.sethands(pos)
+  local original = clockpos
+  M.setpos(pos)
+  startpos = startpos + clockpos - original
 end
 
 function M.sethms(hour, min, sec)
@@ -85,8 +89,12 @@ function M.getpos()
   return clockpos
 end
 
+function M.getpos_even()
+  return clockpos, pulse
+end
+
 function M.getposFromTicks(ticks)
-  return ((startpos + ticks) % pulsePerRev) / pulsePerSecond;
+  return (startpos + ticks) % pulsePerRev
 end
 
 function M.getrunning()
