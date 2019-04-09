@@ -62,8 +62,11 @@ local capture
 local captureBuffer
 
 function doRepaint(t)
-  display.paint(drawState)
-  if capture then
+  if pulsePerSecond then
+    display.paint(drawState)
+  end
+  if capture and captureBuffer then
+    collectgarbage()
     local ok, err = pcall(function ()
       local single = table.concat(captureBuffer)
       captureBuffer = {}
@@ -142,6 +145,7 @@ local function tick()
       M.stop()
   end
   timer:alarm(500, 0, tick)
+  collectgarbage()
 end
 
 local maxBrightness = 256
@@ -192,18 +196,24 @@ M.start = function ()
   led.setD5(led.yellow)
 end
 
-M.stop = function ()
-  if not running then return end
-  timer:stop()
+M.stop = function (cb)
+  if running then 
+    timer:stop()
 
-  pulser.stop(function()   
-    local ticks, even = pulser.status()
-    time.ticks(ticks, even)
-    time.save()
-    time.stop()
-    running = false
-    led.setD5(led.red)
-    print ('stopped') end)
+    pulser.stop(function()   
+      local ticks, even = pulser.status()
+      time.ticks(ticks, even)
+      time.save()
+      time.stop()
+      running = false
+      led.setD5(led.red)
+      print ('stopped') 
+      if cb then cb() end end)
+  else
+    if cb then 
+      cb()
+    end
+  end
 end
 
 M.toggle = function()

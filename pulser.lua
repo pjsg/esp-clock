@@ -45,7 +45,7 @@ M.init = function(bipolar, pps, pulsetime, maxpps)
 end
 
 -- starts ticking in offset us, with pin[1] if even
-M.start = function(offset, even)
+M.start = function(offset)
   local now = tmr.now()
   
   local table = { { delay=offset }, 
@@ -64,10 +64,6 @@ M.start = function(offset, even)
   else
     table[3].loop = 2
     table[3].count = 1000000000
-  end
-  if not even and isBipolar then
-    table[1].loop = 4
-    table[1].count = 2
   end
 
   pulser = gpio.pulse.build(table)
@@ -140,6 +136,8 @@ M.rebase = function()
   end
 end
 
+local lastpos = 0
+
 -- gets the number of ticks since start and even
 M.status = function()
   if not pulser then
@@ -147,6 +145,11 @@ M.status = function()
   end
 
   local pos, steps, offset, new = pulser:getstate()
+
+  -- if pos ~= lastpos then
+  --   lastpos = pos
+  --   uart.write(0, pos + 48)
+  -- end
 
   -- when we are in a waiting state (odd) then we have completed
   -- the tick
@@ -160,12 +163,13 @@ M.stop = function(callback)
   end
   local pos, steps, offset, new = pulser:getstate()
 
-  -- 3 & 5 are the delaystates 
+  -- lets always stop in state 3 or state 5 if bipolar.
+  -- this way we always start in state 3
 
-  if pos == 2 or pos == 5 or not isBipolar then
-    pulser:stop(3, callback)
-  else
+  if isBipolar then
     pulser:stop(5, callback)
+  else
+    pulser:stop(3, callback)
   end
   
 end

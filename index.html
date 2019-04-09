@@ -1,6 +1,7 @@
 <html><head>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sprintf/1.1.2/sprintf.min.js"></script>
 <style>
 body {
   font-family: sans-serif;
@@ -22,7 +23,7 @@ input.narrow {
   width: 12em;
 }
 .runstopswitch {
-    position: relative; width: 94px;
+    position: relative; width: 100px;
     -webkit-user-select:none; -moz-user-select:none; -ms-user-select: none;
 }
 .runstopswitch-checkbox {
@@ -56,7 +57,7 @@ input.narrow {
     display: block; width: 18px; margin: 6px;
     background: #FFFFFF;
     position: absolute; top: 0; bottom: 0;
-    right: 60px;
+    right: 66px;
     border: 2px solid #999999; border-radius: 20px;
     transition: all 0.3s ease-in 0s; 
 }
@@ -89,7 +90,7 @@ input.narrow {
     </label>
 </div>
 
-<span id="params"></span>
+<span id="params" style="display: none"></span>
 
 <br>
 <div id='setter' style='visibility: hidden'>
@@ -100,6 +101,8 @@ MAC: <span id="mac"></span><br>
 Timezone: <span id="tz"></span><br>
 Last sync: <span id="lastsync"></span><br>
 Now: <span id="now"></span><br>
+FW: <span id="fw"></span><br>
+HW: <span id="hw"></span><br>
 </div>
 <script>
 var sample = 
@@ -239,15 +242,22 @@ function handleResponse( result ) {
           $('#led' + i).css('background-color', '#' + result.leds[i]);
         }
         if (result.pos != lastpos) {
-          var hms = "" + result.hms[0] + ":" + leftFillNum(result.hms[1], 2) + ":" + leftFillNum(result.hms[2], 2);
+          var hms = "" + result.hmst[0] + ":" + leftFillNum(result.hmst[1], 2) + ":" + leftFillNum(result.hmst[2], 2);
           if (result.boardConfig.pps > 1) {
-            var fraction = result.pos % result.boardConfig.pps;
-            var ms = Math.floor(fraction * 1000 / result.boardConfig.pps);
-            hms = hms + "." + leftFillNum(ms, 3);
+            hms = hms + "." + leftFillNum(result.hmst[3], 3);
           }
           $("#hms").val(hms);
           lastpos = result.pos;
         }
+        $('#hw').text(result.hw_build);
+        var fw = new Date(1000 * result.sw_build);
+        $('#fw').text(sprintf("%04d-%02d-%02d %02d:%02d",
+           fw.getUTCFullYear(), 
+           fw.getUTCMonth() + 1, 
+           fw.getUTCDate(), 
+           fw.getUTCHours(), 
+           fw.getUTCMinutes() 
+        ));
         pps = result.boardConfig.pps;
       }
 }

@@ -79,6 +79,7 @@ return function (connection, payload)
   local function onSend(c)
     while queue[1] do
       local data = queue[1]
+      collectgarbage()
       local ok, err = pcall(function() c:send(data, onSend) end)
       if not ok then
         return
@@ -140,6 +141,7 @@ return function (connection, payload)
   local key = payload:match("Sec%-WebSocket%-Key: ([A-Za-z0-9+/=]+)")
   local filename = "_" .. string.gsub(req.uri.file, "/", "_")
   local ok, serving = pcall(require, filename)
+  collectgarbage()
   if req.method == "GET" and key and ok then
     connection:send(
       "HTTP/1.1 101 Switching Protocols\r\n" ..

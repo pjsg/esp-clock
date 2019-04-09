@@ -25,10 +25,22 @@ end
 
 syslog = (require "syslog")(config.syslog_("192.168.1.68"))
 
+node.egc.setmode(node.egc.ON_ALLOC_FAILURE)
+
 if true then
   dprint = function() end
 else
   dprint = print
+end
+
+function flashreload(image)
+  local control = require "control"
+  control.stop(function() node.flashreload(image) end)
+end
+
+function restart()
+  local control = require "control"
+  control.stop(node.restart)
 end
 
 local power = require "powerstatus"

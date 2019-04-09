@@ -26,7 +26,8 @@ local function getStatus()
   local ticks, even = pulser.status()
 
   R.time = {rtctime.get()}
-  R.hms = {t.gethms()}
+  R.pos = t.getposFromTicks(ticks)
+  R.hmst = {t.gethmstFromPos(R.pos)}
   R.running = t.getrunning()
   R.config = config.table
   R.boardConfig = require "config"('board').table
@@ -36,7 +37,11 @@ local function getStatus()
   R.isBipolar = pulser.getIsBipolar()
   R.millivolts = powerstatus.millivolts()
   R.leds = led.getHexColors()
-  R.pos = t.getposFromTicks(ticks)
+  R.sw_build, _ = node.flashindex()
+  local _,_,_,_,_,_,_,_,info = node.info()
+  if info then
+    R.hw_build = string.match(info, "%d%d%d%d%-%d%d%-%d%d %d%d:%d%d")
+  end
   return R 
 end
 

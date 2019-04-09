@@ -85,6 +85,11 @@ function M.gethms()
   return t / 3600, (t / 60) % 60, t % 60
 end
 
+function M.gethmstFromPos(pos)
+  local t = pos / pulsePerSecond
+  return t / 3600, (t / 60) % 60, t % 60, (pos % pulsePerSecond) * 1000 / pulsePerSecond
+end
+
 function M.getpos()
   return clockpos
 end

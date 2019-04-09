@@ -64,6 +64,7 @@ end
 local srv = net.createServer(net.TCP)
 local function onNewConnection(conn)
     conn:on("receive", function(c, request)
+        collectgarbage()
         local _, _, method, path, vars = string.find(request, "([A-Z]+) (.*)?(.+) HTTP")
         if method == nil then
             _, _, method, path = string.find(request, "([A-Z]+) (.*) HTTP")
@@ -75,6 +76,7 @@ local function onNewConnection(conn)
             end
         end
 
+        collectgarbage()
         local f = (H[method .. path])
         if f == nil then
            sendfile(c, "notfound.html")

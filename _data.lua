@@ -1,9 +1,12 @@
 local webserver = require "webserver"
 local control = require "control"
 
+local opencount = 0
+
 return function (socket)
   local t = tmr.create()
   node.setcpufreq(node.CPU160MHZ)
+  opencount = opencount + 1
   local function dosend()
     if socket.getPendingCount() < 2 then
       socket.send(sjson.encode(webserver.getStatus()), 1)
@@ -12,7 +15,10 @@ return function (socket)
   t:alarm(1000, tmr.ALARM_AUTO, dosend)
   register_object("data-timer", t)
   function socket.onclose()
-    node.setcpufreq(node.CPU80MHZ)
+    opencount = opencount - 1
+    if not opencount then
+      node.setcpufreq(node.CPU80MHZ)
+    end
     t:unregister()
     control.setCapture(nil)
     t = nil
