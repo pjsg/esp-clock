@@ -63,6 +63,9 @@ function M.register(adder)
     if vars.pos then
       t.sethands(vars.pos)
     end
+    if vars.brightness then
+      config.brightness = vars.brightness
+    end
     if vars.zone then
       if tz.exists(vars.zone) then
         config.tz = vars.zone

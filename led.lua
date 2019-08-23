@@ -1,5 +1,7 @@
 local M = {}
 
+local config = require "config"("config")
+
 M.black = string.char(0,0,0)
 M.red = string.char(255,0,0)
 M.yellow = string.char(255,255,0)
@@ -14,7 +16,7 @@ local fadedBuffer = ws2812.newBuffer(3, 3)
 local brightness = 256
 
 function M.flush()
-  fadedBuffer:mix(brightness, buffer)
+  fadedBuffer:mix(brightness * config.brightness_(256) / 256, buffer)
   ws2812.write(fadedBuffer) 
 end
 
